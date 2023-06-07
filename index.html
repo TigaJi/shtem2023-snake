@@ -25,13 +25,14 @@
       </div>
     </div>
 
-    <div id="start-mask" class="snake-mask">
+    <div id="game-over-mask" class="snake-mask">
       <h2>Game Over!</h2>
-      <button id="restart-btn">Restart Game</button>
+      <button id="restart-btn" onclick="restartGame()">Restart</button>
     </div>
 
-    <div class="snake-mask">
-
+    <div id="paused-mask" class="snake-mask">
+      <h1>Paused.</h1>
+      <button id="resume-btn" onclick="resumeGame()">Resume</button>
     </div>
 
     <script src="snake.js"></script>

@@ -23,6 +23,7 @@ let changingDirection = false;
 // init game loop and gameover flag
 let gameLoopIntervalId = 0;
 let gameOver = false;
+let paused = false;
 
 // record states 
 const snapshots = [];
@@ -30,18 +31,23 @@ const snapshots = [];
 // game loop
 function gameLoop() {
   const fps = document.querySelector('#fps-input').value;
-  
+
   gameLoopIntervalId = setTimeout(function () {
     if (gameOver) {
-      return
+      return;
     }
 
-    requestAnimationFrame(gameLoop)
-    drawCanvas() // draw canvas
-    moveSnake() // move the snake
-    checkCollision() // check for game ending condition
-    drawScore()
-    snapshots.push(getCanvasSnapshot()) // record state
+    requestAnimationFrame(gameLoop);
+
+    if (paused) {
+      return;
+    }
+    
+    drawCanvas(); // draw canvas
+    moveSnake(); // move the snake
+    checkCollision(); // check for game ending condition
+    drawScore();
+    snapshots.push(getCanvasSnapshot()); // record state
   }, 1000 / fps);
 }
 
@@ -91,9 +97,9 @@ function moveSnake() {
 function checkCollision() {
   // hit the wall
   if (snake[0].x < 0 ||
-      snake[0].x > canvas.width - 10 ||
-      snake[0].y < 0 ||
-      snake[0].y > canvas.height - 10) {
+    snake[0].x > canvas.width - 10 ||
+    snake[0].y < 0 ||
+    snake[0].y > canvas.height - 10) {
     gameOver = true;
     endGame();
   }
@@ -123,10 +129,10 @@ function updateFruitPosition() {
   fruit.y = Math.floor(Math.random() * (canvas.height / 10)) * 10;
 }
 
-const maskEl = document.getElementById('start-mask');
+const gameOverMask = document.getElementById('game-over-mask');
 
 function endGame() {
-  maskEl.style.display = 'flex';
+  gameOverMask.style.display = 'flex';
 
   console.log('snapshots', snapshots);
 
@@ -135,35 +141,62 @@ function endGame() {
 
 }
 
+const pausedMask = document.getElementById('paused-mask');
+
+function pauseGame() {
+  console.log("pause")
+  paused = true;
+  pausedMask.style.display = 'flex';
+}
+
+function resumeGame() {
+  console.log("resume")
+  paused = false;
+  pausedMask.style.display = 'none';
+}
+
+function restartGame() {
+  document.location.reload();
+}
+
 // 获取方向
 function getDirection() {
-  if (direction === 'up') {
-    return { x: 0, y: -10 };
-  } else if (direction === 'down') {
-    return { x: 0, y: 10 };
-  } else if (direction === 'left') {
-    return { x: -10, y: 0 };
-  } else {
-    return { x: 10, y: 0 };
+  switch (direction) {
+    case 'up':   return { x:   0, y: -10 };
+    case 'down': return { x:   0, y:  10 };
+    case 'left': return { x: -10, y:   0 };
+    case 'right':
+    default:
+      return { x:  10, y:   0 };
   }
 }
 
 // keyboard listener
 document.addEventListener('keydown', function (event) {
-  if (!changingDirection) {
-    if (event.keyCode === 37 && direction !== 'right') {
-      direction = 'left';
-      changingDirection = true;
-    } else if (event.keyCode === 38 && direction !== 'down') {
-      direction = 'up';
-      changingDirection = true;
-    } else if (event.keyCode === 39 && direction !== 'left') {
-      direction = 'right';
-      changingDirection = true;
-    } else if (event.keyCode === 40 && direction !== 'up') {
-      direction = 'down';
-      changingDirection = true;
+  if (event.key === ' ') {
+    if (paused) {
+      resumeGame();
+    } else {
+      pauseGame();
     }
+  
+    return;
+  }
+
+  if (changingDirection) {
+    return;
+  }
+
+  changingDirection = true;
+
+  if (event.key === 'ArrowLeft' && direction !== 'right') {
+    direction = 'left';
+  } else if (event.key === 'ArrowUp' && direction !== 'down') {
+    direction = 'up';
+  } else if (event.key === 'ArrowRight' && direction !== 'left') {
+    direction = 'right';
+  } else if (event.key === 'ArrowDown' && direction !== 'up') {
+    direction = 'down';
   }
 })
 
@@ -182,7 +215,6 @@ function getCanvasSnapshot() {
   snapshotCanvas.height = canvas.height;
   const snapshotContext = snapshotCanvas.getContext('2d');
 
-
   snapshotContext.drawImage(canvas, 0, 0);
 
   // turn snapshot to base64 data
@@ -198,10 +230,6 @@ function getCanvasSnapshot() {
   };
 }
 
-
-restartBtn.addEventListener('click', function () {
-  document.location.reload();
-});
 
 // start
 const startEl = document.getElementById('before-start');
