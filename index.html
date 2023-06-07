@@ -1,128 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <title>Snake Game</title>
-    <style>
-      .canvas {
-        width: 600px;
-        height: 600px;
-        border: 1px solid black;
-        margin: 0 auto;
-      }
-      .score {
-        font-size: 20px;
-        font-weight: bold;
-        text-align: center;
-      }
-
-      .game {
-        display: none;
-      }
-
-      /* 按照el-button的样式写 */
-      button {
-        display: inline-block;
-        border: 1px solid #dcdfe6;
-        border-radius: 4px;
-        padding: 12px 20px;
-        font-size: 14px;
-        text-align: center;
-        cursor: pointer;
-        background-color: #fff;
-        color: #606266;
-        outline: none;
-        box-sizing: border-box;
-        margin: 0;
-        transition: 0.1s;
-
-        margin-top: 16px;
-      }
-
-      button:hover {
-        color: #409eff;
-        border-color: #c6e2ff;
-        background-color: #ecf5ff;
-      }
-
-      input {
-        display: inline-block;
-        width: 300px;
-        height: 40px;
-        border: 1px solid #dcdfe6;
-        border-radius: 4px;
-        padding: 0 10px;
-        font-size: 14px;
-        text-align: left;
-        box-sizing: border-box;
-        margin: 0;
-        transition: 0.1s;
-      }
-
-      input:focus {
-        border-color: #409eff;
-        outline: none;
-      }
-
-      .before-start {
-        text-align: center;
-        padding-top: 200px;
-      }
-
-      body {
-        width: 100vw;
-        height: 100vh;
-        margin: 0;
-        padding: 0;
-
-        position: relative;
-      }
-
-      .mask {
-        width: 100vw;
-        height: 100vh;
-
-        position: fixed;
-        top: 0;
-        left: 0;
-
-        background-color: rgba(255, 255, 255, 0.9);
-
-        display: none;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
-
-      .fps {
-        padding: 16px 0;
-        text-align: center;
-      }
-    </style>
+    <link rel="stylesheet" href="snake.css" />
   </head>
   <body>
-    <div class="before-start">
-      <div class="input">
-        <label for="width">userId：</label>
+    <div id="before-start" class="snake-before-start">
+      <div>
+        <label for="user-id">userId: </label>
         <input type="text" id="user-id" placeholder="please input your userId" />
       </div>
-      <button id="start-btn" onclick="startGame()">Start Game</button>
+      <button id="start-btn" onclick="startGame()" type="button">Start Game</button>
     </div>
 
-    <div class="game">
-      <div class="score">score：<span>0</span></div>
-      <div class="canvas">
+    <div id="game" class="snake-game">
+      <div class="snake-score">score: <span id="score-value">0</span></div>
+      <div class="snake-canvas">
         <canvas id="canvas" width="600" height="600"></canvas>
       </div>
-      <div class="input fps">
-        <label for="width">fps：</label>
+      <div class="snake-fps">
+        <label for="fps-input">fps: </label>
         <input type="number" id="fps-input" value="10" min="1" />
       </div>
     </div>
 
-    <div class="mask">
-      <h2>Game Over！</h2>
+    <div id="start-mask" class="snake-mask">
+      <h2>Game Over!</h2>
       <button id="restart-btn">Restart Game</button>
+    </div>
+
+    <div class="snake-mask">
+
     </div>
 
     <script src="snake.js"></script>
