@@ -42,7 +42,7 @@ function gameLoop() {
     if (paused) {
       return;
     }
-    
+
     drawCanvas(); // draw canvas
     moveSnake(); // move the snake
     checkCollision(); // check for game ending condition
@@ -131,17 +131,34 @@ function updateFruitPosition() {
 
 const gameOverMask = document.getElementById('game-over-mask');
 
+
 function endGame() {
   gameOverMask.style.display = 'flex';
 
   console.log('snapshots', snapshots);
 
-  // TODO: upload data to S3 when an episode ends; Utilize "user_id" to record the trajectories for each player
+  const userId = userIdInput.value;
+  const params = {
+    Bucket: 'snake-container',
+    Key: userId + '/' + Date.now() + '.json'
+  };
+  
+  const message = JSON.stringify(snapshots);
 
+  params.Body = message;
+  params.ContentMD5 = CryptoJS.MD5(message).toString(CryptoJS.enc.Base64);
 
+  s3.putObject(params, function (error, data) {
+    if (error) {
+      console.log(error, error.stack);
+    } else if (data) {
+      console.log(data);
+    }
+  });
 }
 
 const pausedMask = document.getElementById('paused-mask');
+
 
 function pauseGame() {
   console.log("pause")
@@ -149,27 +166,31 @@ function pauseGame() {
   pausedMask.style.display = 'flex';
 }
 
+
 function resumeGame() {
   console.log("resume")
   paused = false;
   pausedMask.style.display = 'none';
 }
 
+
 function restartGame() {
   document.location.reload();
 }
 
+
 // 获取方向
 function getDirection() {
   switch (direction) {
-    case 'up':   return { x:   0, y: -10 };
-    case 'down': return { x:   0, y:  10 };
-    case 'left': return { x: -10, y:   0 };
+    case 'up': return { x: 0, y: -10 };
+    case 'down': return { x: 0, y: 10 };
+    case 'left': return { x: -10, y: 0 };
     case 'right':
     default:
-      return { x:  10, y:   0 };
+      return { x: 10, y: 0 };
   }
 }
+
 
 // keyboard listener
 document.addEventListener('keydown', function (event) {
@@ -179,7 +200,7 @@ document.addEventListener('keydown', function (event) {
     } else {
       pauseGame();
     }
-  
+
     return;
   }
 
@@ -198,7 +219,8 @@ document.addEventListener('keydown', function (event) {
   } else if (event.key === 'ArrowDown' && direction !== 'up') {
     direction = 'down';
   }
-})
+});
+
 
 // state recorder
 function getCanvasSnapshot() {
@@ -222,7 +244,7 @@ function getCanvasSnapshot() {
 
   // return time and data
   return {
-    time: new Date().getTime(),
+    time: Date.now(),
     imageData,
     currentDirection,
     snakeHeadPosition,
@@ -237,6 +259,7 @@ const startEl = document.getElementById('before-start');
 const gameBoard = document.getElementById('game');
 // userId input
 const userIdInput = document.getElementById('user-id');
+
 
 function startGame() {
   if (!userIdInput.value) {
