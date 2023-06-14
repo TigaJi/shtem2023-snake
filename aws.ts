@@ -1,3 +1,5 @@
+/// <reference types="aws-sdk" />
+import * as AWS from "aws-sdk"
 AWS.config.update({
     region: "us-east-1",
     credentials: new AWS.CognitoIdentityCredentials({
@@ -5,7 +7,7 @@ AWS.config.update({
     })
 });
 
-const s3 = new AWS.S3({
+export const s3 = new AWS.S3({
     params: {
         Bucket: "snake-container"
     }

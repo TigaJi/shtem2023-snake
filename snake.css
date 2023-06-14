@@ -59,7 +59,7 @@ input:focus {
   outline: none;
 }
 
-.snake-before-start {
+.snake-welcome-screen {
   text-align: center;
   padding-top: 200px;
 }
