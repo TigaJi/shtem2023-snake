@@ -4,9 +4,16 @@
     <meta charset="utf-8" />
     <title>Snake Game</title>
     <link rel="stylesheet" href="snake.css" />
+    <script>let exports = {};</script>
+
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.4.8.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/md5.min.js"></script>
+    <script src="aws.js"></script>
+    <script src="snake.js"></script>
   </head>
   <body>
-    <div id="before-start" class="snake-before-start">
+    <div id="welcome-screen" class="snake-welcome-screen">
       <div>
         <label for="user-id">userId: </label>
         <input type="text" id="user-id" placeholder="please input your userId" />
@@ -14,7 +21,7 @@
       <button id="start-btn" onclick="startGame()" type="button">Start Game</button>
     </div>
 
-    <div id="game" class="snake-game">
+    <div id="game-board" class="snake-game">
       <div class="snake-score">score: <span id="score-value">0</span></div>
       <div class="snake-canvas">
         <canvas id="canvas" width="600" height="600"></canvas>
@@ -35,10 +42,5 @@
       <button id="resume-btn" onclick="resumeGame()">Resume</button>
     </div>
 
-    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.4.8.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/md5.min.js"></script>
-    <script src="aws.js"></script>
-    <script src="snake.js"></script>
   </body>
 </html>

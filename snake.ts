@@ -1,12 +1,47 @@
-// get canvas and button
-const canvas = document.getElementById('canvas');
-const context = canvas.getContext('2d');
-const restartBtn = document.getElementById('restart-btn');
+import { s3 } from "./aws";
 
+// -------------------- Types -------------------- 
+// data structure that stores a snapshot information
+type Snapshot =  {
+  time: number;       // universal timestam
+  imageData: string;  // based64 image data
+  currentDirection: string;
+  snakeHeadPosition: { 
+    // left top: (0,0)
+    // right bottom: (~thousandish, ~thousandish)
+      x: number;
+      y: number;
+  };
+  fruitPosition: {
+      x: number;
+      y: number;
+  };
+}
+
+// --------------------  Global constants -------------------- 
+const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
+const context = canvas.getContext('2d')!;
+
+const gameOverMask = document.querySelector<HTMLElement>('#game-over-mask')!;
+const pausedMask = document.querySelector<HTMLElement>('#paused-mask')!;
+
+// record states 
+const snapshots: Snapshot[] = [];
+
+// start and restart
+const welcomeScreen = document.querySelector<HTMLElement>('#welcome-screen')!;
+const gameBoard = document.querySelector<HTMLElement>('#game-board')!;
+const restartBtn = document.querySelector<HTMLButtonElement>('#restart-btn');
+
+// userId input
+const userIdInput = document.querySelector<HTMLInputElement>('#user-id')!;
+
+
+// --------------------  Global variables -------------------- 
 // init
 let score = 0;
 
-// init snake and fruit
+// init snake and fruit positions
 let snake = [
   { x: 200, y: 200 },
   { x: 190, y: 200 },
@@ -21,16 +56,13 @@ let direction = 'right';
 let changingDirection = false;
 
 // init game loop and gameover flag
-let gameLoopIntervalId = 0;
+let gameLoopIntervalId = null;
 let gameOver = false;
 let paused = false;
 
-// record states 
-const snapshots = [];
-
 // game loop
 function gameLoop() {
-  const fps = document.querySelector('#fps-input').value;
+  const fps : number = Number.parseInt(document.querySelector<HTMLInputElement>('#fps-input')!.value);
 
   gameLoopIntervalId = setTimeout(function () {
     if (gameOver) {
@@ -52,7 +84,7 @@ function gameLoop() {
 }
 
 
-function drawCanvas() {
+function drawCanvas(): void {
   context.fillStyle = 'white';
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.strokeStyle = 'black';
@@ -62,7 +94,7 @@ function drawCanvas() {
 }
 
 
-function drawSnake() {
+function drawSnake(): void {
   context.fillStyle = 'green';
   context.strokeStyle = 'darkgreen';
   for (let i = 0; i < snake.length; i++) {
@@ -73,7 +105,7 @@ function drawSnake() {
 }
 
 
-function drawFruit() {
+function drawFruit(): void {
   context.fillStyle = 'red';
   context.strokeStyle = 'darkred';
   context.fillRect(fruit.x, fruit.y, 10, 10);
@@ -81,7 +113,7 @@ function drawFruit() {
 }
 
 
-function moveSnake() {
+function moveSnake(): void {
   const head = { x: snake[0].x + getDirection().x, y: snake[0].y + getDirection().y };
   snake.unshift(head); // add head
   if (!ateFruit()) {
@@ -94,7 +126,7 @@ function moveSnake() {
 }
 
 // check for game end
-function checkCollision() {
+function checkCollision(): void {
   // hit the wall
   if (snake[0].x < 0 ||
     snake[0].x > canvas.width - 10 ||
@@ -114,12 +146,12 @@ function checkCollision() {
 }
 
 
-function drawScore() {
-  document.getElementById('score-value').innerText = score;
+function drawScore(): void {
+  document.querySelector<HTMLElement>('#score-value')!.innerText = score.toString();
 }
 
 
-function ateFruit() {
+function ateFruit(): boolean {
   return snake[0].x === fruit.x && snake[0].y === fruit.y;
 }
 
@@ -129,16 +161,12 @@ function updateFruitPosition() {
   fruit.y = Math.floor(Math.random() * (canvas.height / 10)) * 10;
 }
 
-const gameOverMask = document.getElementById('game-over-mask');
-
 
 function endGame() {
   gameOverMask.style.display = 'flex';
 
-  console.log('snapshots', snapshots);
-
   const userId = userIdInput.value;
-  const params = {
+  const params : any = {
     Bucket: 'snake-container',
     Key: userId + '/' + Date.now() + '.json'
   };
@@ -148,7 +176,7 @@ function endGame() {
   params.Body = message;
   params.ContentMD5 = CryptoJS.MD5(message).toString(CryptoJS.enc.Base64);
 
-  s3.putObject(params, function (error, data) {
+  s3.putObject(params, function (error: any, data: any) {
     if (error) {
       console.log(error, error.stack);
     } else if (data) {
@@ -156,9 +184,6 @@ function endGame() {
     }
   });
 }
-
-const pausedMask = document.getElementById('paused-mask');
-
 
 function pauseGame() {
   console.log("pause")
@@ -224,8 +249,9 @@ document.addEventListener('keydown', function (event) {
 });
 
 
+
 // state recorder
-function getCanvasSnapshot() {
+function getCanvasSnapshot(): Snapshot {
   // record direction (action)
   const currentDirection = direction;
 
@@ -237,7 +263,7 @@ function getCanvasSnapshot() {
   const snapshotCanvas = document.createElement('canvas');
   snapshotCanvas.width = canvas.width;
   snapshotCanvas.height = canvas.height;
-  const snapshotContext = snapshotCanvas.getContext('2d');
+  const snapshotContext = snapshotCanvas.getContext('2d')!;
 
   snapshotContext.drawImage(canvas, 0, 0);
 
@@ -255,14 +281,6 @@ function getCanvasSnapshot() {
 }
 
 
-// start
-const startEl = document.getElementById('before-start');
-
-const gameBoard = document.getElementById('game');
-// userId input
-const userIdInput = document.getElementById('user-id');
-
-
 function startGame() {
   if (!userIdInput.value) {
     alert('please input userId');
@@ -271,5 +289,5 @@ function startGame() {
   gameBoard.style.display = 'block';
   updateFruitPosition();
   gameLoop(); // game start
-  startEl.style.display = 'none'; // hide the start button
+  welcomeScreen.style.display = 'none'; // hide the start button
 }
