@@ -195,7 +195,9 @@ function getDirection() {
 // keyboard listener
 document.addEventListener('keydown', function (event) {
   if (event.key === ' ') {
-    if (paused) {
+    if (gameOver){
+      restartGame();
+    } else if (paused) {
       resumeGame();
     } else {
       pauseGame();
