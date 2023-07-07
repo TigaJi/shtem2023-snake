@@ -146,7 +146,7 @@ function endGame() {
   const message = JSON.stringify(snapshots);
 
   params.Body = message;
-  params.ContentMD5 = CryptoJS.MD5(message).toString(CryptoJS.enc.Base64);
+  params.ContentMD5 = btoa(CryptoJS.MD5(message).toString(CryptoJS.enc.Latin1));
 
   s3.putObject(params, function (error, data) {
     if (error) {
