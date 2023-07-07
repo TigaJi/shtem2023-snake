@@ -28,8 +28,44 @@ let paused = false;
 // record states 
 const snapshots = [];
 
+let agent = true;
+let pathToFruit = [];
+let it = -1;
+// Return 
+function init(){
+  document.addEventListener('keydown', function (event) {
+    if (event.key === ' ') {
+      if (paused) {
+        resumeGame();
+      } else {
+        pauseGame();
+      }
+  
+      return;
+    }
+  
+    if (changingDirection) {
+      return;
+    }
+
+    changingDirection = true;
+
+    if (event.key === 'ArrowLeft' && direction !== 'right') {
+      direction = 'left';
+    } else if (event.key === 'ArrowUp' && direction !== 'down') {
+      direction = 'up';
+    } else if (event.key === 'ArrowRight' && direction !== 'left') {
+      direction = 'right';
+    } else if (event.key === 'ArrowDown' && direction !== 'up') {
+      direction = 'down';
+    }
+  });
+}
+
+
 // game loop
 function gameLoop() {
+
   const fps = document.querySelector('#fps-input').value;
 
   gameLoopIntervalId = setTimeout(function () {
@@ -80,18 +116,139 @@ function drawFruit() {
   context.strokeRect(fruit.x, fruit.y, 10, 10);
 }
 
+// Add the findFruitBFS() function
+function findFruitBFS(start, target) {
+  const queue = [];
+  const visited = new Set();
+  const directions = [
+    { x: 0, y: -10 }, // Up
+    { x: 0, y: 10 }, // Down
+    { x: -10, y: 0 }, // Left
+    { x: 10, y: 0 } // Right
+  ];
 
-function moveSnake() {
-  const head = { x: snake[0].x + getDirection().x, y: snake[0].y + getDirection().y };
-  snake.unshift(head); // add head
-  if (!ateFruit()) {
-    snake.pop(); // delete tail if no fruit is eaten
-  } else {
-    score++; // increment score
-    updateFruitPosition(); // update fruit position
+  queue.push({ position: start, path: [] });
+  visited.add(`${start.x},${start.y}`);
+
+  while (queue.length > 0) {
+    const { position, path } = queue.shift();
+
+    if (position.x === target.x && position.y === target.y) {
+      return [...path, position];
+    }
+
+    for (const direction of directions) {
+      const newPosition = {
+        x: position.x + direction.x,
+        y: position.y + direction.y
+      };
+
+      const newPositionKey = `${newPosition.x},${newPosition.y}`;
+
+      if (
+        newPosition.x >= 0 &&
+        newPosition.x < canvas.width &&
+        newPosition.y >= 0 &&
+        newPosition.y < canvas.height &&
+        !visited.has(newPositionKey) &&
+        !isSnakeCollision(newPosition)
+      ) {
+        queue.push({ position: newPosition, path: [...path, newPosition] });
+        visited.add(newPositionKey);
+      }
+    }
   }
-  changingDirection = false;
+
+  return null;
 }
+
+// Add the isSnakeCollision() function
+function isSnakeCollision(position) {
+  for (let i = 0; i < snake.length; i++) {
+    if (snake[i].x === position.x && snake[i].y === position.y) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+function agentNextPosition() {
+  if (it==-1 || it==pathToFruit.length) {
+    const head = {
+      x: snake[0].x + getDirection().x,
+      y: snake[0].y + getDirection().y
+    };
+    const fruitPosition = { x: fruit.x, y: fruit.y };
+    pathToFruit = findFruitBFS(head, fruitPosition);
+    it = 0;
+  }
+  if (it >= 0 && it < pathToFruit.length){
+    return pathToFruit[it++];
+  }
+  return null;
+}
+
+// Modify the moveSnake() function
+function moveSnake() {
+  const head = {
+    x: snake[0].x + getDirection().x,
+    y: snake[0].y + getDirection().y
+  };
+  if (agent){
+    const nextPosition = agentNextPosition();
+    // console.log(nextPosition)
+    const deltaX = nextPosition.x - snake[0].x;
+    const deltaY = nextPosition.y - snake[0].y;
+    if (deltaX > 0) {
+      document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowRight'}));
+      // direction = 'right';
+    } else if (deltaX < 0) {
+      document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowLeft'}));
+      // direction = 'left';
+    } else if (deltaY > 0) {
+      document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowDown'}));
+      // direction = 'down';
+    } else if (deltaY < 0) {
+      document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowUp'}));
+      // direction = 'up';
+    }
+    snake.unshift(head);
+
+    if (!ateFruit()) {
+      snake.pop();
+    } else {
+      score++;
+      updateFruitPosition();
+
+      const head = {
+        x: snake[0].x + getDirection().x,
+        y: snake[0].y + getDirection().y
+      };
+      const fruitPosition = { x: fruit.x, y: fruit.y };
+      pathToFruit = findFruitBFS(head, fruitPosition);
+      console.log("path updated")
+      it = 0;
+    }
+  
+    changingDirection = false;
+
+  }
+
+
+}
+
+// function moveSnake() {
+  // const head = { x: snake[0].x + getDirection().x, y: snake[0].y + getDirection().y };
+  // snake.unshift(head); // add head
+  // if (!ateFruit()) {
+  //   snake.pop(); // delete tail if no fruit is eaten
+  // } else {
+  //   score++; // increment score
+  //   updateFruitPosition(); // update fruit position
+  // }
+  // changingDirection = false;
+// }
 
 // check for game end
 function checkCollision() {
@@ -146,7 +303,7 @@ function endGame() {
   const message = JSON.stringify(snapshots);
 
   params.Body = message;
-  params.ContentMD5 = CryptoJS.MD5(message).toString(CryptoJS.enc.Base64);
+  params.ContentMD5 = btoa(CryptoJS.MD5(message).toString(CryptoJS.enc.Latin1));
 
   s3.putObject(params, function (error, data) {
     if (error) {
@@ -179,7 +336,7 @@ function restartGame() {
 }
 
 
-// 获取方向
+// Get direction
 function getDirection() {
   switch (direction) {
     case 'up': return { x: 0, y: -10 };
@@ -193,33 +350,6 @@ function getDirection() {
 
 
 // keyboard listener
-document.addEventListener('keydown', function (event) {
-  if (event.key === ' ') {
-    if (paused) {
-      resumeGame();
-    } else {
-      pauseGame();
-    }
-
-    return;
-  }
-
-  if (changingDirection) {
-    return;
-  }
-
-  changingDirection = true;
-
-  if (event.key === 'ArrowLeft' && direction !== 'right') {
-    direction = 'left';
-  } else if (event.key === 'ArrowUp' && direction !== 'down') {
-    direction = 'up';
-  } else if (event.key === 'ArrowRight' && direction !== 'left') {
-    direction = 'right';
-  } else if (event.key === 'ArrowDown' && direction !== 'up') {
-    direction = 'down';
-  }
-});
 
 
 // state recorder
@@ -267,7 +397,9 @@ function startGame() {
     return;
   }
   gameBoard.style.display = 'block';
+  init();
   updateFruitPosition();
+  
   gameLoop(); // game start
   startEl.style.display = 'none'; // hide the start button
 }
