@@ -163,7 +163,7 @@ function drawFruit() {
 // }
 
 // work in progress
-function tylerPlay() {
+function tailSearch() {
 	const adjacentes = (a, xMax, yMax) =>
 	  [
 	    [a[0], a[1] - 1],
@@ -266,7 +266,8 @@ function agentNextPosition() {
       y: snake[0].y + getDirection().y
     };
     const fruitPosition = { x: fruit.x, y: fruit.y };
-    pathToFruit = findFruitBFS(head, fruitPosition);
+    // pathToFruit = findFruitBFS(head, fruitPosition);
+    pathToFruit = tailSearch();
     it = 0;
   }
   if (it >= 0 && it < pathToFruit.length){
