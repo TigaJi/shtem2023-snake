@@ -118,7 +118,7 @@ function drawFruit() {
 
 // Add the findFruitBFS() function
 function findFruitBFS(start, target) {
-  const queue = [];
+  const stack = [];
   const visited = new Set();
   const directions = [
     { x: 0, y: -10 }, // Up
@@ -127,11 +127,11 @@ function findFruitBFS(start, target) {
     { x: 10, y: 0 } // Right
   ];
 
-  queue.push({ position: start, path: [] });
+  stack.push({ position: start, path: [] });
   visited.add(`${start.x},${start.y}`);
 
-  while (queue.length > 0) {
-    const { position, path } = queue.shift();
+  while (stack.length > 0) {
+    const { position, path } = stack.pop();
 
     if (position.x === target.x && position.y === target.y) {
       return [...path, position];
@@ -153,7 +153,7 @@ function findFruitBFS(start, target) {
         !visited.has(newPositionKey) &&
         !isSnakeCollision(newPosition)
       ) {
-        queue.push({ position: newPosition, path: [...path, newPosition] });
+        stack.push({ position: newPosition, path: [...path, newPosition] });
         visited.add(newPositionKey);
       }
     }
@@ -197,23 +197,20 @@ function moveSnake() {
   };
   if (agent){
     const nextPosition = agentNextPosition();
-    // console.log(nextPosition)
     const deltaX = nextPosition.x - snake[0].x;
     const deltaY = nextPosition.y - snake[0].y;
     if (deltaX > 0) {
-      document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowRight'}));
-      // direction = 'right';
+      direction = 'right';
     } else if (deltaX < 0) {
-      document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowLeft'}));
-      // direction = 'left';
+      direction = 'left';
     } else if (deltaY > 0) {
-      document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowDown'}));
-      // direction = 'down';
+      direction = 'down';
     } else if (deltaY < 0) {
-      document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowUp'}));
-      // direction = 'up';
+      direction = 'up';
     }
-    snake.unshift(head);
+
+    const newHead = { x: snake[0].x + getDirection().x, y: snake[0].y + getDirection().y };
+    snake.unshift(newHead);
 
     if (!ateFruit()) {
       snake.pop();
@@ -227,16 +224,13 @@ function moveSnake() {
       };
       const fruitPosition = { x: fruit.x, y: fruit.y };
       pathToFruit = findFruitBFS(head, fruitPosition);
-      console.log("path updated")
       it = 0;
     }
   
     changingDirection = false;
-
   }
-
-
 }
+
 
 // function moveSnake() {
   // const head = { x: snake[0].x + getDirection().x, y: snake[0].y + getDirection().y };
