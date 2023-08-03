@@ -268,32 +268,54 @@ function isSnakeCollision(position) {
 function agentNextPosition() {
   if (it==-1 || it==pathToFruit.length) {
     const head = {
-      x: snake[0].x + getDirection().x,
-      y: snake[0].y + getDirection().y
+      x: snake[0].x,
+      y: snake[0].y
     };
     const fruitPosition = { x: fruit.x, y: fruit.y };
     pathToFruit = findFruitBFS(head, fruitPosition);
+    console.log("Path updated in agent next")
     console.log(pathToFruit)
     // pathToFruit = tailSearch();
     it = 0;
   }
   if (it >= 0 && it < pathToFruit.length){
     drawPath();
+    nextPosition = pathToFruit[it]
+    it++;
+    return nextPosition;
   }
   return null;
 }
 
 // Modify the moveSnake() function
 function moveSnake() {
-  const head = {
-    x: snake[0].x + getDirection().x,
-    y: snake[0].y + getDirection().y
+  let head = {
+    x: snake[0].x,
+    y: snake[0].y,
   };
   if (agent){
+    if (!ateFruit()) {
+      snake.pop();
+    } else { 
+      // Fruit is eaten
+      score++;
+      updateFruitPosition();
+
+      const head = {
+        x: snake[0].x + getDirection().x,
+        y: snake[0].y + getDirection().y
+      };
+      const fruitPosition = { x: fruit.x, y: fruit.y };
+      // pathToFruit = findFruitBFS(head, fruitPosition);
+      // console.log("path updated")
+      // console.log(pathToFruit)
+      // it = 0;
+    }
     const nextPosition = agentNextPosition();
-    // console.log(nextPosition)
+    console.log(nextPosition)
     const deltaX = nextPosition.x - snake[0].x;
     const deltaY = nextPosition.y - snake[0].y;
+    console.log(deltaX, deltaY)
     if (deltaX > 0) {
       document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowRight'}));
       // direction = 'right';
@@ -306,28 +328,17 @@ function moveSnake() {
     } else if (deltaY < 0) {
       document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowUp'}));
       // direction = 'up';
+    } else {
+      console.log("Error: deltaX = deltaY = 0")
     }
     snake.unshift(head);
 
-    if (!ateFruit()) {
-      snake.pop();
-    } else {
-      score++;
-      updateFruitPosition();
-
-      const head = {
-        x: snake[0].x + getDirection().x,
-        y: snake[0].y + getDirection().y
-      };
-      const fruitPosition = { x: fruit.x, y: fruit.y };
-      pathToFruit = findFruitBFS(head, fruitPosition);
-      console.log("path updated")
-      it = 0;
-    }
   
     changingDirection = false;
 
   }
+  head.x += getDirection().x;
+  head.y += getDirection().y;
 
 
 }
