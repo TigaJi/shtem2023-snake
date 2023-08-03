@@ -108,6 +108,12 @@ function drawSnake() {
   }
 }
 
+function drawPath() {
+  context.fillStyle = 'yellow';
+  for (let i = 0; i < pathToFruit.length; i++) {
+    context.fillRect(pathToFruit[i].x, pathToFruit[i].y, 10, 10);
+  }
+}
 
 function drawFruit() {
   context.fillStyle = 'red';
@@ -271,7 +277,7 @@ function agentNextPosition() {
     it = 0;
   }
   if (it >= 0 && it < pathToFruit.length){
-    return pathToFruit[it++];
+    drawPath();
   }
   return null;
 }
