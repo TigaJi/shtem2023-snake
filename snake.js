@@ -122,51 +122,51 @@ function drawFruit() {
   context.strokeRect(fruit.x, fruit.y, 10, 10);
 }
 
-// Add the findFruitBFS() function
-// function findFruitBFS(start, target) {
-//   const queue = [];
-//   const visited = new Set();
-//   const directions = [
-//     { x: 0, y: -10 }, // Up
-//     { x: 0, y: 10 }, // Down
-//     { x: -10, y: 0 }, // Left
-//     { x: 10, y: 0 } // Right
-//   ];
+function findFruitBFS(head, fruit) {
+  const queue = [];
+  const visited = new Set();
+  const directions = [
+    { x: 0, y: -10 }, // Up
+    { x: 0, y: 10 }, // Down
+    { x: -10, y: 0 }, // Left
+    { x: 10, y: 0 } // Right
+  ];
 
-//   queue.push({ position: start, path: [] });
-//   visited.add(`${start.x},${start.y}`);
+  queue.push({ position: head, path: [] });
+  visited.add(`${head.x},${head.y}`);
+  console.log(fruit)
 
-//   while (queue.length > 0) {
-//     const { position, path } = queue.shift();
+  while (queue.length > 0) {
+    const { position, path } = queue.shift();
 
-//     if (position.x === target.x && position.y === target.y) {
-//       return [...path, position];
-//     }
+    if (position.x === fruit.x && position.y === fruit.y) {
+      return [...path, position];
+    }
 
-//     for (const direction of directions) {
-//       const newPosition = {
-//         x: position.x + direction.x,
-//         y: position.y + direction.y
-//       };
+    for (const direction of directions) {
+      const newPosition = {
+        x: position.x + direction.x,
+        y: position.y + direction.y
+      };
 
-//       const newPositionKey = `${newPosition.x},${newPosition.y}`;
+      const newPositionKey = `${newPosition.x},${newPosition.y}`;
 
-//       if (
-//         newPosition.x >= 0 &&
-//         newPosition.x < canvas.width &&
-//         newPosition.y >= 0 &&
-//         newPosition.y < canvas.height &&
-//         !visited.has(newPositionKey) &&
-//         !isSnakeCollision(newPosition)
-//       ) {
-//         queue.push({ position: newPosition, path: [...path, newPosition] });
-//         visited.add(newPositionKey);
-//       }
-//     }
-//   }
+      if (
+        newPosition.x >= 0 &&
+        newPosition.x < canvas.width &&
+        newPosition.y >= 0 &&
+        newPosition.y < canvas.height &&
+        !visited.has(newPositionKey) &&
+        !isSnakeCollision(newPosition)
+      ) {
+        queue.push({ position: newPosition, path: [...path, newPosition] });
+        visited.add(newPositionKey);
+      }
+    }
+  }
 
-//   return null;
-// }
+  return null;
+ }
 
 // work in progress
 function tailSearch() {
@@ -272,8 +272,9 @@ function agentNextPosition() {
       y: snake[0].y + getDirection().y
     };
     const fruitPosition = { x: fruit.x, y: fruit.y };
-    // pathToFruit = findFruitBFS(head, fruitPosition);
-    pathToFruit = tailSearch();
+    pathToFruit = findFruitBFS(head, fruitPosition);
+    console.log(pathToFruit)
+    // pathToFruit = tailSearch();
     it = 0;
   }
   if (it >= 0 && it < pathToFruit.length){
