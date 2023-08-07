@@ -122,6 +122,9 @@ function drawFruit() {
   context.strokeRect(fruit.x, fruit.y, 10, 10);
 }
 
+
+// heuristics
+
 function findFruitBFS(head, fruit) {
   const queue = [];
   const visited = new Set();
@@ -164,7 +167,10 @@ function findFruitBFS(head, fruit) {
       }
     }
   }
-
+  console.log("findFruitBFS returns null");
+  console.log("path", path);
+  console.log("queue", queue);
+  console.log("visited", visited);
   return null;
  }
 
@@ -311,7 +317,10 @@ function moveSnake() {
       // console.log(pathToFruit)
       // it = 0;
     }
-    const nextPosition = agentNextPosition();
+    let nextPosition = agentNextPosition();
+    if (nextPosition.x == head.x && nextPosition.y == head.y) {
+      nextPosition = agentNextPosition();
+    }
     console.log(nextPosition)
     const deltaX = nextPosition.x - snake[0].x;
     const deltaY = nextPosition.y - snake[0].y;
