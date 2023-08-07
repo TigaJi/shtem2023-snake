@@ -13,22 +13,44 @@
           type="text"
           id="user-id"
           placeholder="please input your userId"
+          value="hi"
         />
       </div>
       <button id="start-btn" onclick="startGame()" type="button">
         Start Game
       </button>
+
+      <div>
+        <div class="input-field">
+          <label for="fps-input">fps: </label>
+          <input type="number" id="fps-input" value="1000" min="1" />
+        </div>
+        <div class="input-field">
+          <label for="no-delay">Skip animations</label>
+          <input type="checkbox" id="no-delay" />
+        </div>
+        <div class="input-field">
+          <label for="no-snapshots">Skip snapshots collection</label>
+          <input type="checkbox" id="no-snapshots" />
+        </div>
+        <div class="input-field">
+          <label for="no-agent">Control with keyboard</label>
+          <input type="checkbox" id="no-agent" />
+        </div>
+        <div class="input-field">
+          <label for="auto-restart">Number of rounds:</label>
+          <input type="number" id="auto-restart" value="0" min="0" />
+        </div>
+        <div class="input-field">
+          <label for="snake-count">Number of snakes:</label>
+          <input type="number" id="snake-count" value="1" min="1" />
+        </div>
+      </div>
     </div>
 
     <div id="game" class="snake-game">
       <div class="snake-score">score: <span id="score-value">0</span></div>
-      <div class="snake-canvas">
-        <canvas id="canvas" width="600" height="600"></canvas>
-      </div>
-      <div class="snake-fps">
-        <label for="fps-input">fps: </label>
-        <input type="number" id="fps-input" value="1000000" min="1" />
-      </div>
+      <div id="snake-canvas"></div>
     </div>
 
     <div id="game-over-mask" class="snake-mask">

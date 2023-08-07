@@ -1,8 +1,9 @@
-.snake-canvas {
-  width: 600px;
-  height: 600px;
-  border: 1px solid black;
+#snake-canvas {
+  display: flex;
+  /* border: 1px solid black; */
   margin: 0 auto;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .snake-score {
@@ -89,7 +90,7 @@ body {
   align-items: center;
 }
 
-.snake-fps {
+.input-field {
   padding: 16px 0;
   text-align: center;
 }

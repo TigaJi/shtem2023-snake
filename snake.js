@@ -1,49 +1,83 @@
 // get canvas and button
-const canvas = document.getElementById("canvas");
-const context = canvas.getContext("2d");
 const restartBtn = document.getElementById("restart-btn");
 
-function initGameState(userId, canvas) {
-  return {
-    userId,
-    canvas,
-    context: canvas.context,
-    score: 0,
-    snake: [
-      { x: 200, y: 200 },
-      { x: 190, y: 200 },
-      { x: 180, y: 200 },
-      { x: 170, y: 200 },
-      { x: 160, y: 200 },
-    ],
-    fruit: {
-      x: 0,
-      y: 0,
-    },
-    direction: "right",
-    gameLoopIntervalId: 0,
-    gameOver: false,
-    paused: false,
-    snapshots: [],
-    agentState: {
-      pathToFruit: [],
-      it: -1,
-    },
-  };
+async function launch(userId, canvas, config) {
+  return new Promise(function (resolve, reject) {
+    const gameState = {
+      userId,
+      canvas,
+      context: canvas.getContext("2d"),
+      score: 0,
+      snake: [
+        { x: 200, y: 200 },
+        { x: 190, y: 200 },
+        { x: 180, y: 200 },
+        { x: 170, y: 200 },
+        { x: 160, y: 200 },
+      ],
+      fruit: {
+        x: 0,
+        y: 0,
+      },
+      direction: "right",
+      gameLoopIntervalId: 0,
+      gameOver: false,
+      paused: false,
+      snapshots: [],
+      agentState: {
+        pathToFruit: [],
+        it: -1,
+      },
+      startTime: performance.now(),
+      endTime: null,
+      config: config,
+      resolve,
+      reject,
+    };
+    updateFruitPosition(gameState);
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === " ") {
+        if (gameState.paused) {
+          resumeGame(gameState);
+        } else {
+          pauseGame(gameState);
+        }
+        return;
+      }
+
+      if (config.noAgent) {
+        if (event.key === "ArrowLeft" && gameState.direction !== "right") {
+          gameState.direction = "left";
+        } else if (event.key === "ArrowUp" && gameState.direction !== "down") {
+          gameState.direction = "up";
+        } else if (
+          event.key === "ArrowRight" &&
+          gameState.direction !== "left"
+        ) {
+          gameState.direction = "right";
+        } else if (event.key === "ArrowDown" && gameState.direction !== "up") {
+          gameState.direction = "down";
+        }
+      }
+    });
+    gameLoop(gameState);
+  });
 }
 
 // const gameState = initGameState("asd", canvas);
 // game loop
-function gameLoop(gameState) {
-  const fps = document.querySelector("#fps-input").value;
-
-  gameState.gameLoopIntervalId = setTimeout(function () {
-    if (gameState.gameOver !== false) {
-      return;
-    }
-
-    if (gameState.paused) {
-      return;
+async function gameLoop(gameState) {
+  function runFrame() {
+    if (!gameState.config.noDelay) {
+      if (gameState.gameOver) {
+        endGame(gameState);
+        return;
+      }
+      requestAnimationFrame(() => gameLoop(gameState));
+      if (gameState.paused) {
+        return;
+      }
     }
 
     try {
@@ -51,46 +85,78 @@ function gameLoop(gameState) {
       moveSnake(gameState); // move the snake
       checkCollision(gameState); // check for game ending condition
       drawScore(gameState);
-      gameState.snapshots.push(getCanvasSnapshot(gameState)); // record state
+      if (!gameState.config.noSnapshots) {
+        gameState.snapshots.push(getCanvasSnapshot(gameState)); // record state
+      }
     } catch (error) {
       console.log("Game ended with an error", error);
       gameState.gameOver = true;
     }
-    requestAnimationFrame(() => gameLoop(gameState));
-  }, 1000 / fps);
+  }
+
+  if (gameState.config.noDelay) {
+    while (!gameState.gameOver) {
+      if (gameState.paused) continue;
+      runFrame();
+    }
+    endGame(gameState);
+  } else {
+    const fps = document.querySelector("#fps-input").value;
+    gameState.gameLoopIntervalId = setTimeout(runFrame, 1000 / fps);
+  }
 }
 
 function drawCanvas(gameState) {
-  context.fillStyle = "white";
-  context.fillRect(0, 0, gameState.canvas.width, gameState.canvas.height);
-  context.strokeStyle = "black";
-  context.strokeRect(0, 0, gameState.canvas.width, gameState.canvas.height);
+  gameState.context.fillStyle = "white";
+  gameState.context.fillRect(
+    0,
+    0,
+    gameState.canvas.width,
+    gameState.canvas.height,
+  );
+  gameState.context.strokeStyle = "black";
+  gameState.context.strokeRect(
+    0,
+    0,
+    gameState.canvas.width,
+    gameState.canvas.height,
+  );
   drawSnake(gameState);
   drawFruit(gameState);
 }
 
 function drawSnake(gameState) {
-  context.fillStyle = "green";
-  context.strokeStyle = "darkgreen";
+  gameState.context.fillStyle = "green";
+  gameState.context.strokeStyle = "darkgreen";
   for (let i = 0; i < gameState.snake.length; i++) {
-    context.fillStyle = i === 0 ? "green" : "lightgreen";
-    context.fillRect(gameState.snake[i].x, gameState.snake[i].y, 10, 10);
-    context.strokeRect(gameState.snake[i].x, gameState.snake[i].y, 10, 10);
+    gameState.context.fillStyle = i === 0 ? "green" : "lightgreen";
+    gameState.context.fillRect(
+      gameState.snake[i].x,
+      gameState.snake[i].y,
+      10,
+      10,
+    );
+    gameState.context.strokeRect(
+      gameState.snake[i].x,
+      gameState.snake[i].y,
+      10,
+      10,
+    );
   }
 }
 
 function drawPath(path) {
-  context.fillStyle = "yellow";
+  gameState.context.fillStyle = "yellow";
   for (let i = 0; i < path.length; i++) {
-    context.fillRect(path[i].x, path[i].y, 10, 10);
+    gameState.context.fillRect(path[i].x, path[i].y, 10, 10);
   }
 }
 
 function drawFruit(gameState) {
-  context.fillStyle = "red";
-  context.strokeStyle = "darkred";
-  context.fillRect(gameState.fruit.x, gameState.fruit.y, 10, 10);
-  context.strokeRect(gameState.fruit.x, gameState.fruit.y, 10, 10);
+  gameState.context.fillStyle = "red";
+  gameState.context.strokeStyle = "darkred";
+  gameState.context.fillRect(gameState.fruit.x, gameState.fruit.y, 10, 10);
+  gameState.context.strokeRect(gameState.fruit.x, gameState.fruit.y, 10, 10);
 }
 
 // heuristics
@@ -217,14 +283,18 @@ function moveSnake(gameState) {
     updateFruitPosition(gameState);
   }
 
-  if (gameState.agentState !== undefined) {
+  if (!gameState.config.noAgent) {
     let nextPosition = agentNextPosition(gameState);
-    if (nextPosition.x == head.x && nextPosition.y == head.y) {
-      nextPosition = agentNextPosition(gameState);
-    }
     if (nextPosition === null) {
       gameState.gameOver = true;
       return;
+    }
+    if (nextPosition.x == head.x && nextPosition.y == head.y) {
+      nextPosition = agentNextPosition(gameState);
+      if (nextPosition === null) {
+        gameState.gameOver = true;
+        return;
+      }
     }
     const deltaX = nextPosition.x - gameState.snake[0].x;
     const deltaY = nextPosition.y - gameState.snake[0].y;
@@ -288,39 +358,47 @@ function ateFruit(gameState) {
 }
 
 function updateFruitPosition(gameState) {
-  while (isSnakeCollision(gameState, gameState.fruit)) {
+  do {
     gameState.fruit.x =
       Math.floor(Math.random() * (gameState.canvas.width / 10)) * 10;
     gameState.fruit.y =
       Math.floor(Math.random() * (gameState.canvas.height / 10)) * 10;
-  }
+  } while (isSnakeCollision(gameState, gameState.fruit));
 }
 
 const gameOverMask = document.getElementById("game-over-mask");
 
 function endGame(gameState) {
-  console.log(
-    "Sending game data from",
-    gameState.userId,
-    "; final state:",
-    gameState,
-  );
-  gameOverMask.style.display = "flex";
+  let { resolve, snapshots, canvas, context, ...states } = gameState;
 
+  console.log("finalState", JSON.stringify(states));
+  if (gameState.config.noSnapshots) {
+    states.endTime = performance.now();
+    resolve(states);
+    return;
+  }
+
+  console.log("param");
   const params = {
     Bucket: "snake-container",
     Key: gameState.userId + "/" + Date.now() + ".json",
   };
+  console.log("stringify");
 
-  const message = JSON.stringify(gameState.snapshots);
+  const message = JSON.stringify(snapshots);
+  console.log("prepost");
 
   params.Body = message;
   params.ContentMD5 = btoa(CryptoJS.MD5(message).toString(CryptoJS.enc.Latin1));
-  return;
+  console.log("encoded");
   s3.putObject(params, function (error, data) {
     if (error) {
+      console.log("error");
+      reject(error);
     } else if (data) {
-      console.log("Final state:", gameState, "; data:", data);
+      console.log("resolving");
+      states.endTime = performance.now();
+      resolve(states.startTime, states.endTime);
     }
   });
 }
@@ -337,8 +415,10 @@ function resumeGame(gameState) {
   pausedMask.style.display = "none";
 }
 
-function restartGame(gameState) {
-  document.location.reload();
+function restartGame() {
+  startEl.style.display = "block";
+  gameBoard.style.display = "none";
+  gameOverMask.style.display = "none";
 }
 
 // Get direction
@@ -397,37 +477,59 @@ const startEl = document.getElementById("before-start");
 const gameBoard = document.getElementById("game");
 // userId input
 
-function startGame() {
-  const userIdInput = document.getElementById("user-id");
-  if (!userIdInput.value) {
+async function startGame() {
+  const autoRestart = Number.parseInt(
+    document.getElementById("auto-restart").value,
+  );
+  const rounds = 1 + autoRestart;
+  let config = {
+    noSnapshots: false,
+    noDelay: false,
+    noAgent: false,
+  };
+  const userIdInput = document.getElementById("user-id").value;
+  if (!userIdInput) {
     alert("please input userId");
     return;
   }
-  startEl.style.display = "none"; // hide the start button
+  config.noSnapshots = document.getElementById("no-snapshots").checked;
+  config.noDelay = document.getElementById("no-delay").checked;
+  config.noAgent = document.getElementById("no-agent").checked;
+  const snakeCount = Number.parseInt(
+    document.getElementById("snake-count").value,
+  );
+  const canvasContainer = document.getElementById("snake-canvas");
 
-  gameBoard.style.display = "block";
+  for (let i = 0; i < rounds; i++) {
+    const roundStart = performance.now();
+    console.log(`Running ${i + 1} out of ${rounds} of games`);
+    gameOverMask.style.display = "none";
+    startEl.style.display = "none"; // hide the start button
+    gameBoard.style.display = "block";
 
-  const gameState = initGameState(userIdInput, canvas);
-  document.addEventListener("keydown", function (event) {
-    if (event.key === " ") {
-      if (gameState.paused) {
-        resumeGame(gameState);
-      } else {
-        pauseGame(gameState);
-      }
-      return;
+    canvasContainer.innerHTML = "";
+    const results = [];
+    let doneCount = 0;
+    for (let i = 0; i < snakeCount; i++) {
+      canvas = document.createElement("canvas");
+      canvas.width = 600;
+      canvas.height = 600;
+      canvasContainer.appendChild(canvas);
+      results.push(
+        launch(userIdInput, canvas, config).then((startTime, endTime) => {
+          doneCount++;
+          console.log(
+            `Done with ${doneCount} out of ${snakeCount} snakes in ${
+              endTime - startTime
+            }ms; snake #${i + 1}`,
+          );
+        }),
+      );
     }
-
-    if (event.key === "ArrowLeft" && gameState.direction !== "right") {
-      gameState.direction = "left";
-    } else if (event.key === "ArrowUp" && gameState.direction !== "down") {
-      gameState.direction = "up";
-    } else if (event.key === "ArrowRight" && gameState.direction !== "left") {
-      gameState.direction = "right";
-    } else if (event.key === "ArrowDown" && gameState.direction !== "up") {
-      gameState.direction = "down";
-    }
-  });
-  updateFruitPosition(gameState);
-  gameLoop(gameState);
+    await Promise.all(results);
+    console.log(
+      `Done with round ${i + 1} in ${performance.now() - roundStart}ms`,
+    );
+  }
+  gameOverMask.style.display = "flex";
 }
