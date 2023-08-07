@@ -1,5 +1,10 @@
 // get canvas and button
+
 const restartBtn = document.getElementById("restart-btn");
+
+function rescale(coord, gameState) {
+  return {x: coord.x * gameState.config.scalor, y: coord.y * gameState.config.scalor};
+}
 
 async function launch(userId, canvas, config) {
   return new Promise(function (resolve, reject) {
@@ -9,11 +14,11 @@ async function launch(userId, canvas, config) {
       context: canvas.getContext("2d"),
       score: 0,
       snake: [
-        { x: 200, y: 200 },
-        { x: 190, y: 200 },
-        { x: 180, y: 200 },
-        { x: 170, y: 200 },
-        { x: 160, y: 200 },
+        { x: 40, y: 40 },
+        { x: 38, y: 40 },
+        { x: 36, y: 40 },
+        { x: 34, y: 40 },
+        { x: 32, y: 40 },
       ],
       fruit: {
         x: 0,
@@ -34,6 +39,7 @@ async function launch(userId, canvas, config) {
       resolve,
       reject,
     };
+    gameState.snake = gameState.snake.map((s) => rescale(s, gameState))
     updateFruitPosition(gameState);
 
     document.addEventListener("keydown", function (event) {
@@ -130,33 +136,36 @@ function drawSnake(gameState) {
   gameState.context.strokeStyle = "darkgreen";
   for (let i = 0; i < gameState.snake.length; i++) {
     gameState.context.fillStyle = i === 0 ? "green" : "lightgreen";
+    let {x: width, y: height} = rescale({x: 2, y: 2}, gameState);
     gameState.context.fillRect(
       gameState.snake[i].x,
       gameState.snake[i].y,
-      10,
-      10,
+      width,
+      height,
     );
     gameState.context.strokeRect(
       gameState.snake[i].x,
       gameState.snake[i].y,
-      10,
-      10,
+      width,
+      height,
     );
   }
 }
 
-function drawPath(path) {
+function drawPath(gameState, path) {
+  let {x: width, y: height} = rescale({x: 2, y: 2}, gameState);
   gameState.context.fillStyle = "yellow";
   for (let i = 0; i < path.length; i++) {
-    gameState.context.fillRect(path[i].x, path[i].y, 10, 10);
+    gameState.context.fillRect(path[i].x, path[i].y, width, height);
   }
 }
 
 function drawFruit(gameState) {
+  let {x: width, y: height} = rescale({x: 2, y: 2}, gameState);
   gameState.context.fillStyle = "red";
   gameState.context.strokeStyle = "darkred";
-  gameState.context.fillRect(gameState.fruit.x, gameState.fruit.y, 10, 10);
-  gameState.context.strokeRect(gameState.fruit.x, gameState.fruit.y, 10, 10);
+  gameState.context.fillRect(gameState.fruit.x, gameState.fruit.y, width, height);
+  gameState.context.strokeRect(gameState.fruit.x, gameState.fruit.y, width, height);
 }
 
 // heuristics
@@ -165,12 +174,11 @@ function findFruitBFS(gameState, head, fruit) {
   const queue = [];
   const visited = new Set();
   const directions = [
-    { x: 0, y: -10 }, // Up
-    { x: 0, y: 10 }, // Down
-    { x: -10, y: 0 }, // Left
-    { x: 10, y: 0 }, // Right
-  ];
-
+    { x: 0, y: -2 }, // Up
+    { x: 0, y: 2 }, // Down
+    { x: -2, y: 0 }, // Left
+    { x: 2, y: 0 }, // Right
+  ].map((s) => rescale(s, gameState));
   queue.push({ position: head, path: [] });
   visited.add(`${head.x},${head.y}`);
 
@@ -318,11 +326,12 @@ function moveSnake(gameState) {
 // check for game end
 function checkCollision(gameState) {
   // hit the wall
+  let {x: width, y: height} = rescale({x: 2, y: 2}, gameState);
   if (
     gameState.snake[0].x < 0 ||
-    gameState.snake[0].x > gameState.canvas.width - 10 ||
+    gameState.snake[0].x > gameState.canvas.width - width ||
     gameState.snake[0].y < 0 ||
-    gameState.snake[0].y > gameState.canvas.height - 10
+    gameState.snake[0].y > gameState.canvas.height - height
   ) {
     gameState.gameOver = true;
     return;
@@ -358,11 +367,12 @@ function ateFruit(gameState) {
 }
 
 function updateFruitPosition(gameState) {
-  do {
+    let {x: width, y: height} = rescale({x: 2, y: 2}, gameState);
+    do {
     gameState.fruit.x =
-      Math.floor(Math.random() * (gameState.canvas.width / 10)) * 10;
+      Math.floor(Math.random() * (gameState.canvas.width / width)) * width;
     gameState.fruit.y =
-      Math.floor(Math.random() * (gameState.canvas.height / 10)) * 10;
+      Math.floor(Math.random() * (gameState.canvas.height / height)) * height;
   } while (isSnakeCollision(gameState, gameState.fruit));
 }
 
@@ -378,12 +388,10 @@ function endGame(gameState) {
     return;
   }
 
-  console.log("param");
   const params = {
     Bucket: "snake-container",
     Key: gameState.userId + "/" + Date.now() + ".json",
   };
-  console.log("stringify");
 
   const message = JSON.stringify(snapshots);
   console.log("prepost");
@@ -393,10 +401,8 @@ function endGame(gameState) {
   console.log("encoded");
   s3.putObject(params, function (error, data) {
     if (error) {
-      console.log("error");
       reject(error);
     } else if (data) {
-      console.log("resolving");
       states.endTime = performance.now();
       resolve(states.startTime, states.endTime);
     }
@@ -423,16 +429,17 @@ function restartGame() {
 
 // Get direction
 function getDirection(gameState) {
-  switch (gameState.direction) {
+    let {x: width, y: height} = rescale({x: 2, y: 2}, gameState);
+    switch (gameState.direction) {
     case "up":
-      return { x: 0, y: -10 };
+      return { x: 0, y: -height };
     case "down":
-      return { x: 0, y: 10 };
+      return { x: 0, y: height };
     case "left":
-      return { x: -10, y: 0 };
+      return { x: -width, y: 0 };
     case "right":
     default:
-      return { x: 10, y: 0 };
+      return { x: width, y: 0 };
   }
 }
 
@@ -495,6 +502,9 @@ async function startGame() {
   config.noSnapshots = document.getElementById("no-snapshots").checked;
   config.noDelay = document.getElementById("no-delay").checked;
   config.noAgent = document.getElementById("no-agent").checked;
+  config.scalor = Number.parseInt(
+    document.getElementById("canvas-scalor").value,
+  );
   const snakeCount = Number.parseInt(
     document.getElementById("snake-count").value,
   );
@@ -512,8 +522,8 @@ async function startGame() {
     let doneCount = 0;
     for (let i = 0; i < snakeCount; i++) {
       canvas = document.createElement("canvas");
-      canvas.width = 600;
-      canvas.height = 600;
+      canvas.width = 120 * config.scalor;
+      canvas.height = 120 * config.scalor;
       canvasContainer.appendChild(canvas);
       results.push(
         launch(userIdInput, canvas, config).then((startTime, endTime) => {
